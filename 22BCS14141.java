@@ -1,100 +1,150 @@
+// Easy Level: Fetching data from Employee table
+import java.sql.*;
+
+public class EasyJDBC {
+    public static void main(String[] args) {
+        String url = "jdbc:mysql://localhost:3306/testdb";
+        String user = "root";
+        String password = "password";
+        
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM Employee")) {
+            
+            while (rs.next()) {
+                System.out.println(rs.getInt("EmpID") + " " + rs.getString("Name") + " " + rs.getDouble("Salary"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+// Medium Level: CRUD Operations on Product table
+import java.sql.*;
+import java.util.Scanner;
+
+public class MediumJDBC {
+    static String url = "jdbc:mysql://localhost:3306/testdb";
+    static String user = "root";
+    static String password = "password";
+    
+    public static void main(String[] args) {
+        try (Connection conn = DriverManager.getConnection(url, user, password); Scanner sc = new Scanner(System.in)) {
+            while (true) {
+                System.out.println("1. Create\n2. Read\n3. Update\n4. Delete\n5. Exit");
+                int choice = sc.nextInt();
+                switch (choice) {
+                    case 1 -> create(conn, sc);
+                    case 2 -> read(conn);
+                    case 3 -> update(conn, sc);
+                    case 4 -> delete(conn, sc);
+                    case 5 -> System.exit(0);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    static void create(Connection conn, Scanner sc) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO Product VALUES (?, ?, ?, ?)");
+        ps.setInt(1, sc.nextInt());
+        ps.setString(2, sc.next());
+        ps.setDouble(3, sc.nextDouble());
+        ps.setInt(4, sc.nextInt());
+        ps.executeUpdate();
+    }
+    static void read(Connection conn) throws SQLException {
+        ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM Product");
+        while (rs.next()) {
+            System.out.println(rs.getInt(1) + " " + rs.getString(2) + " " + rs.getDouble(3) + " " + rs.getInt(4));
+        }
+    }
+    static void update(Connection conn, Scanner sc) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("UPDATE Product SET Price = ? WHERE ProductID = ?");
+        ps.setDouble(1, sc.nextDouble());
+        ps.setInt(2, sc.nextInt());
+        ps.executeUpdate();
+    }
+    static void delete(Connection conn, Scanner sc) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("DELETE FROM Product WHERE ProductID = ?");
+        ps.setInt(1, sc.nextInt());
+        ps.executeUpdate();
+    }
+}
+
+// Hard Level: Student Management using MVC
+import java.sql.*;
 import java.util.*;
-import java.util.stream.*;
 
-// Easy Level: Sorting Employee Objects
-class Employee {
-    String name;
-    int age;
-    double salary;
-
-    Employee(String name, int age, double salary) {
-        this.name = name;
-        this.age = age;
-        this.salary = salary;
-    }
-
-    public String toString() {
-        return name + " - Age: " + age + ", Salary: " + salary;
-    }
-}
-
-class EasyLevel {
-    public static void main(String[] args) {
-        List<Employee> employees = Arrays.asList(
-            new Employee("Alice", 30, 50000),
-            new Employee("Bob", 25, 60000),
-            new Employee("Charlie", 35, 55000)
-        );
-        employees.sort(Comparator.comparingDouble(e -> e.salary));
-        employees.forEach(System.out::println);
-    }
-}
-
-// Medium Level: Filtering and Sorting Students
 class Student {
-    String name;
+    int id;
+    String name, department;
     double marks;
+}
 
-    Student(String name, double marks) {
-        this.name = name;
-        this.marks = marks;
+class StudentController {
+    Connection conn;
+    StudentController() throws SQLException {
+        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/testdb", "root", "password");
+    }
+    void create(Student s) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO Student VALUES (?, ?, ?, ?)");
+        ps.setInt(1, s.id);
+        ps.setString(2, s.name);
+        ps.setString(3, s.department);
+        ps.setDouble(4, s.marks);
+        ps.executeUpdate();
+    }
+    List<Student> read() throws SQLException {
+        List<Student> list = new ArrayList<>();
+        ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM Student");
+        while (rs.next()) {
+            Student s = new Student();
+            s.id = rs.getInt(1);
+            s.name = rs.getString(2);
+            s.department = rs.getString(3);
+            s.marks = rs.getDouble(4);
+            list.add(s);
+        }
+        return list;
+    }
+    void update(int id, double marks) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("UPDATE Student SET Marks = ? WHERE StudentID = ?");
+        ps.setDouble(1, marks);
+        ps.setInt(2, id);
+        ps.executeUpdate();
+    }
+    void delete(int id) throws SQLException {
+        PreparedStatement ps = conn.prepareStatement("DELETE FROM Student WHERE StudentID = ?");
+        ps.setInt(1, id);
+        ps.executeUpdate();
     }
 }
 
-class MediumLevel {
+public class HardJDBC {
     public static void main(String[] args) {
-        List<Student> students = Arrays.asList(
-            new Student("John", 82),
-            new Student("Emma", 74),
-            new Student("Sophia", 90),
-            new Student("Liam", 78)
-        );
-        students.stream()
-                .filter(s -> s.marks > 75)
-                .sorted(Comparator.comparingDouble(s -> -s.marks))
-                .map(s -> s.name)
-                .forEach(System.out::println);
-    }
-}
-
-// Hard Level: Processing a Large Dataset of Products
-class Product {
-    String name;
-    String category;
-    double price;
-
-    Product(String name, String category, double price) {
-        this.name = name;
-        this.category = category;
-        this.price = price;
-    }
-}
-
-class HardLevel {
-    public static void main(String[] args) {
-        List<Product> products = Arrays.asList(
-            new Product("Laptop", "Electronics", 1200),
-            new Product("Phone", "Electronics", 800),
-            new Product("Shirt", "Clothing", 50),
-            new Product("Jeans", "Clothing", 70),
-            new Product("TV", "Electronics", 1500)
-        );
-        Map<String, List<Product>> groupedByCategory = products.stream()
-                .collect(Collectors.groupingBy(p -> p.category));
-        groupedByCategory.forEach((category, productList) -> {
-            System.out.println(category + " -> " + productList.size() + " products");
-        });
-        Map<String, Optional<Product>> mostExpensiveByCategory = products.stream()
-                .collect(Collectors.groupingBy(
-                        p -> p.category,
-                        Collectors.maxBy(Comparator.comparingDouble(p -> p.price))
-                ));
-        mostExpensiveByCategory.forEach((category, product) ->
-                System.out.println("Most Expensive in " + category + ": " + product.get().name));
-        double avgPrice = products.stream()
-                .mapToDouble(p -> p.price)
-                .average()
-                .orElse(0);
-        System.out.println("Average Price: " + avgPrice);
+        try (Scanner sc = new Scanner(System.in); StudentController controller = new StudentController()) {
+            while (true) {
+                System.out.println("1. Create\n2. Read\n3. Update\n4. Delete\n5. Exit");
+                int choice = sc.nextInt();
+                switch (choice) {
+                    case 1 -> {
+                        Student s = new Student();
+                        s.id = sc.nextInt();
+                        s.name = sc.next();
+                        s.department = sc.next();
+                        s.marks = sc.nextDouble();
+                        controller.create(s);
+                    }
+                    case 2 -> controller.read().forEach(s -> System.out.println(s.id + " " + s.name + " " + s.department + " " + s.marks));
+                    case 3 -> controller.update(sc.nextInt(), sc.nextDouble());
+                    case 4 -> controller.delete(sc.nextInt());
+                    case 5 -> System.exit(0);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
